@@ -63,7 +63,7 @@ class MyHandler(http.server.BaseHTTPRequestHandler):
 
 def startServer():
     logger.info("lover server start.")
-    PORT = 8080
+    PORT = 443
     context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
     context.load_cert_chain(certfile='./example.crt', keyfile="./example.key")
 
