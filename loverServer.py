@@ -87,7 +87,7 @@ def initLog():
     # 输出到文件，并且支持日志轮换（每天一个日志文件）
     logger.add("log/app.log", rotation="00:00:00")  # 每天午夜自动生成新日志文件
     # commentRecord记录存储到这里
-    logger.add("commentRecord/comment_{time:YYYY-MM}.log", level="CRITICAL", rotation="1 month", retention="6 months", format="{time:YYYY-MM-DD HH:mm:ss.SSS} {message}")
+    logger.add("commentRecord/comment_{time:YYYY-MM}.log", level="CRITICAL", rotation="1 month", retention="6 months", format="{message}")
     # 输出日志到文件，最大文件大小为 10MB，最多保留 3 个备份
     # logger.add("app.log", rotation="10 MB", retention="3 files")
 
