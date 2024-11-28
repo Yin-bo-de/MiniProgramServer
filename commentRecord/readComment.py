@@ -20,7 +20,7 @@ class ReadComment:
                     content = file.readline()
                     while content:
                         if param.name in content: # 找到对应的人的内容，并将其组装成json
-                            result += content
+                            result += content + "\n"
                             # print(f"内容来自 {file_name}: \n{content}")
                         content = file.readline()
                     return result

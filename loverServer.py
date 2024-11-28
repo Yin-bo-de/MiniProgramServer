@@ -15,11 +15,13 @@ class MyHandler(http.server.BaseHTTPRequestHandler):
         if path == '/comment':
             readComment = ReadComment()
             # readComment.read(param=) # 从 request中获取姓名和date（“年-月”）
+            # todo: 小程序发来的请求中解析出日期和姓名，并同时绑定情侣姓名，放到param中读取对应的记录
+            result = readComment.read(param="")
 
             self.send_response(200)
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
-            self.wfile.write(b"Hello, this is the /hello endpoint!")
+            self.wfile.write(result)
 
 
     def do_POST(self):
