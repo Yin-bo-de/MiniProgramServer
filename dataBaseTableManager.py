@@ -41,7 +41,6 @@ class MySQLConnectionManage:
         try:
             if tableName == userInfoTableName:
                 cursor = self.connection.cursor()
-                # 创建一个简单的表
                 cursor.execute(f"""
                                 CREATE TABLE IF NOT EXISTS {tableName} (
                                     NickName VARCHAR(100) ,
