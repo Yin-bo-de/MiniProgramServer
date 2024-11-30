@@ -2,6 +2,9 @@ from mysql.connector import Error
 import mysql.connector
 from loguru import logger
 
+from loverServer import userInfoTableName, commentTableName
+
+
 class MySQLConnectionManage:
     def __init__(self, host, user, password):
         try:
@@ -36,30 +39,59 @@ class MySQLConnectionManage:
     # 创建表
     def create_table(self, tableName):
         try:
-            cursor = self.connection.cursor()
-            # 创建一个简单的表
-            cursor.execute(f"""
-            CREATE TABLE IF NOT EXISTS {tableName} (
-                senderName VARCHAR(100) NOT NULL,
-                receiverName VARCHAR(100) NOT NULL, 
-                Message VARCHAR(100) NOT NULL, 
-                RegistrationDate DATETIME
-            )
-            """)
-            logger.info(f"表 {tableName} 创建成功")
+            if tableName == userInfoTableName:
+                cursor = self.connection.cursor()
+                # 创建一个简单的表
+                cursor.execute(f"""
+                                CREATE TABLE IF NOT EXISTS {tableName} (
+                                    NickName VARCHAR(100) ,
+                                    Openid VARCHAR(100) NOT NULL PRIMARY KEY, 
+                                    SessionKey VARCHAR(100), 
+                                    IsRegistered BOOLEAN DEFAULT FALSE，
+                                    isHasLover BOOLEAN DEFAULT FALSE,
+                                    LoverNickName VARCHAR(100) ,
+                                    loverOpenid VARCHAR(100) UNIQUE,
+                                    loverSessionKey VARCHAR(100) ,
+                                    RegistrationDate DATETIME
+                                )
+                                """)
+                logger.info(f"表 {tableName} 创建成功")
+            elif tableName == commentTableName:
+                cursor = self.connection.cursor()
+                # 创建一个简单的表
+                cursor.execute(f"""
+                CREATE TABLE IF NOT EXISTS {tableName} (
+                    senderNickName VARCHAR(100) NOT NULL,
+                    senderOpenid VARCHAR(100) NOT NULL UNIQUE,
+                    receiverNickName VARCHAR(100) NOT NULL, 
+                    receiverOpenid VARCHAR(100) NOT NULL UNIQUE,
+                    Message VARCHAR(100) NOT NULL, 
+                    RegistrationDate DATETIME
+                )
+                """)
+                logger.info(f"表 {tableName} 创建成功")
         except Error as e:
             logger.exception(f"创建表失败: {e}")
 
     # 插入数据
     def insert_data(self, tableName):
         try:
-            cursor = self.connection.cursor()
-            # 插入一条数据
-            cursor.execute(
-                f"INSERT INTO {tableName} (name, email) VALUES (%s, %s)",
-                ('Alice', 'alice@example.com'))
-            self.connection.commit()  # 提交事务
-            logger.info("数据插入成功")
+            if tableName == userInfoTableName:
+                cursor = self.connection.cursor()
+                # 插入一条数据
+                cursor.execute(
+                    f"INSERT INTO {tableName} (name, email) VALUES (%s, %s)",
+                    ('Alice', 'alice@example.com'))
+                self.connection.commit()  # 提交事务
+                logger.info("数据插入成功")
+            elif tableName == commentTableName:
+                cursor = self.connection.cursor()
+                # 插入一条数据
+                cursor.execute(
+                    f"INSERT INTO {tableName} (name, email) VALUES (%s, %s)",
+                    ('Alice', 'alice@example.com'))
+                self.connection.commit()  # 提交事务
+                logger.info("数据插入成功")
         except Error as e:
             logger.exception(f"插入数据失败: {e}")
 
