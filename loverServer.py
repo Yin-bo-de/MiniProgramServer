@@ -2,7 +2,7 @@ import http.server
 import json
 import ssl
 from loguru import logger
-
+from dataBaseTableManager import initDataBaseTable
 from commentRecord.readComment import ReadComment
 
 
@@ -93,6 +93,10 @@ def initLog():
     # 输出日志到文件，最大文件大小为 10MB，最多保留 3 个备份
     # logger.add("app.log", rotation="10 MB", retention="3 files")
 
+
+
 if __name__ == "__main__":
     initLog()
     startServer()
+    # 启动数据库服务，如果不存在对应的表则新建
+    initDataBaseTable()

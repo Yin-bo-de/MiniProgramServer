@@ -1,1 +1,2 @@
 loguru
+mysql-connector-python
