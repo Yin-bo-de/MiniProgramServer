@@ -1,102 +1,50 @@
-import http.server
 import json
 import ssl
+from aifc import Error
+
 from loguru import logger
 from dataBaseTableManager import initDataBaseTable
 from commentRecord.readComment import ReadComment
+from flask import Flask, request, jsonify, Response
 
-
-class MyHandler(http.server.BaseHTTPRequestHandler):
-    def do_GET(self): #处理 GET 请求。
-        # 获取请求路径
-        path = self.path
-        logger.info("receviced GET request," + path)
-        # 根据不同的 URI 处理请求
-        if path == '/comment':
-            readComment = ReadComment()
-            # readComment.read(param=) # 从 request中获取姓名和date（“年-月”）
-            # todo: 小程序发来的请求中解析出日期和姓名，并同时绑定情侣姓名，放到param中读取对应的记录
-            result = readComment.read(param="")
-
-            self.send_response(200)
-            self.send_header('Content-type', 'text/plain')
-            self.end_headers()
-            self.wfile.write(result)
-
-
-    def do_POST(self):
-        """处理 POST 请求"""
-        content_length = self.headers.get('Content-Length', None)
-        if content_length:
-            content_length = int(content_length)
-            body = self.rfile.read(content_length)  # 读取指定长度的数据
-        else:
-            # 没有 Content-Length 且不是 chunked 编码，处理其他逻辑
-            body = self.rfile.read()
-        path = self.path
-        logger.info("receviced POST request," + path)
-        logger.info(body)
-
-        try:
-            if path == '/comment':
-                # 尝试将数据解析为 JSON
-                data = json.loads(body)
-                logger.critical(data)
-                # 发送响应
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-
-                # 返回处理后的数据（这里简单地返回接收到的数据）
-                response = {
-                    'status': 'success',
-                    'received_data': data
-                }
-                self.wfile.write(json.dumps(response).encode('utf-8'))
-
-        except json.JSONDecodeError:
-            # 如果数据无法解析为 JSON，返回 400 错误
-            logger.error("uri error.")
-            self.send_response(400)
-            self.send_header('Content-type', 'text/plain')
-            self.end_headers()
-            self.wfile.write(b"400 Bad Request: Invalid JSON")
-
-
-def startServer():
-    logger.info("lover server start.")
-    PORT = 8081
-    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    context.load_cert_chain(certfile='./example.crt', keyfile="./example.key")
-
-    ciphers = ""
-    ciphers += "ECDHE-ECDSA-AES128-GCM-SHA256:"
-    ciphers += "ECDHE-ECDSA-CHACHA20-POLY1305:"
-    ciphers += "ECDHE-RSA-CHACHA20-POLY1305:"
-    ciphers += "ECDHE-RSA-AES128-GCM-SHA256:"
-    context.set_ciphers(ciphers)
-
-    httpd = http.server.HTTPServer(('0.0.0.0', PORT), MyHandler)
-    httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
-    logger.info(f"Server started at http://localhost:{PORT}")
-    httpd.serve_forever()
-
-    # with http.server.HTTPServer(("", PORT), MyHandler) as server:  # 用于创建 TCP 服务监听指定端口。"" 表示绑定到所有可用的网络接口。
-    #     logger.info(f"Server started at http://localhost:{PORT}")
-    #     server.serve_forever()  # 会让服务器持续运行，直到手动停止。
+databaseName = "loverDatabase"
+tableName = "loverCommentTable" # 留言记录数据表，保存：【日期】【发送方name】【接收方name】【Message】
+connectionManage = initDataBaseTable(databaseName, tableName)
 
 def initLog():
-    # 输出到文件，并且支持日志轮换（每天一个日志文件）
     logger.add("log/app.log", rotation="00:00:00")  # 每天午夜自动生成新日志文件
-    # commentRecord记录存储到这里
-    logger.add("commentRecord/comment_{time:YYYY-MM}.log", level="CRITICAL", rotation="1 month", retention="6 months", format="{message}")
-    # 输出日志到文件，最大文件大小为 10MB，最多保留 3 个备份
-    # logger.add("app.log", rotation="10 MB", retention="3 files")
 
 
+class ServerManage():
+    def __init__(self, host='127.0.0.1', port=8081):
+        self.app = Flask(__name__)
+        self.host = host
+        self.port = port
+
+        # https://0.0.0.0:8081/comment?name="yinbo"
+        @self.app.route('/getComment', methods=['GET'])
+        def getComment():
+            name = request.args.get('name')
+            logger.info(f"received get request, name is {name}")
+            # 调用mysql接口查询数据
+
+            return jsonify(message="success", status="success")
+
+
+        @self.app.route('/postComment', methods=['POST'])
+        def postComment():
+            data = request.get_json()
+            logger.info(f"received post request, data is {data}")
+            # 调用mysql接口插入数据
+
+            # 发送响应,jsonify返回json格式的response
+            return jsonify(message="success", status="success")
+
+    def run(self):
+        logger.info(f"Starting Flask server on {self.host}:{self.port}")
+        self.app.run(ssl_context=('example.crt', 'example.key'), host=self.host, port=self.port)
 
 if __name__ == "__main__":
     initLog()
-    startServer()
-    # 启动数据库服务，如果不存在对应的表则新建
-    initDataBaseTable()
+    serverManage = ServerManage(host="0.0.0.0", port=8081)
+    serverManage.run()

@@ -5,7 +5,6 @@ from loguru import logger
 class MySQLConnectionManage:
     def __init__(self, host, user, password):
         try:
-            # 替换成你的数据库用户名和密码
             self.connection = mysql.connector.connect(
                 host=host,
                 user=user,
@@ -17,36 +16,37 @@ class MySQLConnectionManage:
             logger.exception(f"连接失败: {e}")
 
     # 创建数据库
-    def create_database(self):
+    def create_database(self, databaseName):
         try:
             cursor = self.connection.cursor()
-            cursor.execute("CREATE DATABASE IF NOT EXISTS testdb")  # 创建数据库
-            logger.info("数据库 'testdb' 创建成功")
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {databaseName}")  # 创建数据库
+            logger.info(f"数据库 {databaseName} 创建成功")
         except Error as e:
             logger.exception(f"创建数据库失败: {e}")
 
     # 选择数据库
-    def use_database(self):
+    def use_database(self, databaseName):
         try:
             cursor = self.connection.cursor()
-            cursor.execute("USE testdb")  # 使用指定的数据库
-            logger.info("选择数据库 'testdb'")
+            cursor.execute(f"USE {databaseName}")  # 使用指定的数据库
+            logger.info(f"选择数据库 {databaseName}")
         except Error as e:
             logger.exception(f"选择数据库失败: {e}")
 
     # 创建表
-    def create_table(self):
+    def create_table(self, tableName):
         try:
             cursor = self.connection.cursor()
             # 创建一个简单的表
-            cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                email VARCHAR(100) NOT NULL UNIQUE
+            cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS {tableName} (
+                senderName VARCHAR(100) NOT NULL,
+                receiverName VARCHAR(100) NOT NULL, 
+                Message VARCHAR(100) NOT NULL, 
+                RegistrationDate DATETIME
             )
             """)
-            logger.info("表 'users' 创建成功")
+            logger.info(f"表 {tableName} 创建成功")
         except Error as e:
             logger.exception(f"创建表失败: {e}")
 
@@ -75,17 +75,14 @@ class MySQLConnectionManage:
 
 
 
-def initDataBaseTable():
+def initDataBaseTable(databaseName, tableName):
     connectionManage = MySQLConnectionManage(host='localhost', user='root', password='du4ySaAxZu&.')
     if not connectionManage.connection:
         logger.exception("initDataBaseTable fail.")
-
-    connectionManage.create_database()
-    connectionManage.use_database()
-    connectionManage.create_table()
-    connectionManage.insert_data()
-    connectionManage.query_data()
-    connectionManage.connection.close()
+    connectionManage.create_database(databaseName=databaseName)
+    connectionManage.use_database(databaseName=databaseName)
+    connectionManage.create_table(tableName=tableName)
+    return connectionManage
 
 if __name__ == "__main__":
     initDataBaseTable()
