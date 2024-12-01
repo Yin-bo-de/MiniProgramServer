@@ -1,8 +1,15 @@
+from cgi import logfp
+
 from mysql.connector import Error
 import mysql.connector
 from loguru import logger
 
-from loverServer import userInfoTableName, commentTableName
+databaseName = "loverDatabase"
+commentTableName = "CommentTable" # 留言记录数据表，保存：【日期】【发送方name】【接收方name】【Message】
+userInfoTableName = "userInfoTable" # 记录每个用户的openid，用于判断用户是否注册状态【nickName】【openid】【sessionKey】【】
+# connectionManage = initDataBaseTable(databaseName, commentTableName)
+
+
 
 """
 数据库连接管理类
@@ -61,7 +68,7 @@ class MySQLConnectionManage:
                     NickName VARCHAR(100) ,
                     Openid VARCHAR(100) NOT NULL PRIMARY KEY, 
                     SessionKey VARCHAR(100), 
-                    IsRegistered BOOLEAN DEFAULT FALSE，
+                    IsRegistered BOOLEAN DEFAULT FALSE,
                     isHasLover BOOLEAN DEFAULT FALSE,
                     LoverNickName VARCHAR(100) ,
                     loverOpenid VARCHAR(100) UNIQUE,
@@ -69,6 +76,7 @@ class MySQLConnectionManage:
                     RegistrationDate DATETIME DEFAULT CURRENT_TIMESTAMP)"""
                 logger.info(f"create talbe sql: {sql}")
                 cursor.execute(operation=sql)
+                self.connection.commit()
                 logger.info(f"表 {tableName} 创建成功")
             elif tableName == commentTableName:
                 cursor = self.connection.cursor()
@@ -82,10 +90,45 @@ class MySQLConnectionManage:
                 # 创建一个简单的表
                 logger.info(f"create talbe sql: {sql}")
                 cursor.execute(operation=sql)
+                self.connection.commit()
                 logger.info(f"表 {tableName} 创建成功")
             return 0
         except Error as e:
             logger.exception(f"创建表失败: {e}")
+
+    """
+    删除数据表
+    tableName：目标表名
+    返回值：-1 is fail
+    """
+    def drop_table(self, tableName:str):
+        try:
+            cursor = self.connection.cursor()
+            sql = f"DROP TABLE IF EXISTS {tableName}"
+            logger.info(f"drop table sql: {sql}")
+            cursor.execute(operation=sql)
+            self.connection.commit()
+            return 0
+        except Error as e:
+            logger.exception(f"创建表失败: {e}")
+
+    """
+    查询数据表
+    返回值：-1 is fail，成功返回tables（元组List，表名在第一个元素）
+    """
+    def query_table(self):
+        try:
+            cursor = self.connection.cursor()
+            sql = f"SHOW TABLES"
+            logger.info(f"query table sql: {sql}")
+            cursor.execute(operation=sql)
+            tables = cursor.fetchall()
+            logger.info("当前数据库中的表有：")
+            for table in tables:
+                logger.info(table[0])
+            return tables
+        except Error as e:
+            logger.exception(f"查询表失败: {e}")
 
     """
     向数据表中插入一条数据
@@ -97,14 +140,14 @@ class MySQLConnectionManage:
         try:
             if tableName == userInfoTableName:
                 cursor = self.connection.cursor()
-                sql = f"""INSERT INTO {tableName} "
+                sql = f"""INSERT INTO {tableName}
                     (NickName, Openid, SessionKey, IsRegistered, isHasLover, LoverNickName, loverOpenid, loverSessionKey) 
-                    VALUES (%s, %s，%s, %s，%s, %s %s, %s)"""
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+                logger.info(f"insert data sql: {sql} {data}")
                 # 插入一条数据
                 cursor.execute(
                     operation=sql,
                     params=data)
-                logger.info(f"insert data sql: {sql} {data}")
                 self.connection.commit()  # 提交事务
                 logger.info("数据插入成功")
             elif tableName == commentTableName:
@@ -132,8 +175,6 @@ class MySQLConnectionManage:
     """
     def query_data(self, tableName, condition:list):
         try:
-            if condition.__len__() == 0:
-                return -1
             cursor = self.connection.cursor()
             sql = f"SELECT * FROM {tableName}"
             if condition.__len__() > 0:
@@ -147,8 +188,8 @@ class MySQLConnectionManage:
             cursor.execute(operation=sql)
             result = cursor.fetchall()  # 获取所有结果
             logger.info(f"查询结果size：{result.__len__()}")
-            # for row in result:
-            #     logger.info(row)
+            for row in result:
+                logger.info(row)
             return result
         except Error as e:
             logger.exception(f"查询数据失败: {e}")
@@ -166,34 +207,35 @@ class MySQLConnectionManage:
                 logger.error("keyValue is empty.")
                 return -1
             cursor = self.connection.cursor()
-            sql = f"UPDATE {tableName} SET"
+            sql = f"UPDATE {tableName} SET "
             for item in keyValue:
                 if item is keyValue[-1]:
                     sql += item
                     break
                 sql += item + ", "
             sql += f" WHERE Openid = {openid}"
+            logger.info(f"update sql: {sql}")
             cursor.execute(operation=sql)
+            self.connection.commit()
             return 0
         except Error as e:
             logger.exception(f"更新数据失败: {e}")
 
+    """
+    删除数据
+    tableName:表名
+    openid:对应数据的过滤条件，删除这一行
+    返回值 -1 is fail
+    """
+    def del_data(self, tableName:str, openid:str):
+        try:
+            cursor = self.connection.cursor()
+            sql = f"DELETE FROM {tableName} WHERE Openid={openid}"
+            logger.info(f"del_data sql: {sql}")
+            cursor.execute(operation=sql)
+            self.connection.commit()
+            return 0
+        except Error as e:
+            logger.exception(f"删除数据失败: {e}")
 
-"""
-功能描述：初始化mysql数据库和对应的表
-databaseName:库名
-tableName:表名
-返回值：数据库操作handler
-"""
-def initDataBaseTable(databaseName, tableName):
-    connectionManage = MySQLConnectionManage(host='localhost', user='root', password='du4ySaAxZu&.')
-    if not connectionManage.connection:
-        logger.exception("initDataBaseTable fail.")
-    connectionManage.create_database(databaseName=databaseName)
-    connectionManage.use_database(databaseName=databaseName)
-    connectionManage.create_table(tableName=tableName)
-    return connectionManage
-
-if __name__ == "__main__":
-    initDataBaseTable()
 

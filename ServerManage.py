@@ -1,36 +1,23 @@
-import json
-import ssl
-from aifc import Error
-from http.client import responses
 
-import requests
-from loguru import logger
-from requests.utils import set_environ
-
-from dataBaseTableManager import initDataBaseTable
-from commentRecord.readComment import ReadComment
-from flask import Flask, request, jsonify, Response
-
-
-
-databaseName = "loverDatabase"
-commentTableName = "CommentTable" # 留言记录数据表，保存：【日期】【发送方name】【接收方name】【Message】
-userInfoTableName = "userInfoTable" # 记录每个用户的openid，用于判断用户是否注册状态【nickName】【openid】【sessionKey】【】
-connectionManage = initDataBaseTable(databaseName, commentTableName)
-
-def initLog():
-    logger.add("log/app.log", rotation="00:00:00")  # 每天午夜自动生成新日志文件
 
 
 """
 功能描述：lover server manage类
 参数：host，监听域名，port监听端口
 """
+import json
+
+import requests
+from flask import jsonify, request, Flask
+from loguru import logger
+
+
 class ServerManage():
-    def __init__(self, host='127.0.0.1', port=8081):
+    def __init__(self, mySQLConnectionManage, host='127.0.0.1', port=8081):
         self.app = Flask(__name__)
         self.host = host
         self.port = port
+        self.mySQLConnectionManage = mySQLConnectionManage
 
         """
         监听小程序的获取留言记录的接口
@@ -101,7 +88,3 @@ class ServerManage():
         logger.info(f"Starting Flask server on {self.host}:{self.port}")
         self.app.run(ssl_context=('example.crt', 'example.key'), host=self.host, port=self.port)
 
-if __name__ == "__main__":
-    initLog()
-    serverManage = ServerManage(host="0.0.0.0", port=8081)
-    serverManage.run()
