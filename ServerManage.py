@@ -11,6 +11,8 @@ import requests
 from flask import jsonify, request, Flask
 from loguru import logger
 
+from dataBaseTableManager import userInfoTableName
+
 
 class ServerManage():
     def __init__(self, mySQLConnectionManage, host='127.0.0.1', port=8081):
@@ -60,7 +62,7 @@ class ServerManage():
                 params={
                     "appid": appid,
                     "secret": secret,
-                    "code": code,
+                    "js_code": code,
                     "grant_type": 'authorization_code'
                 }
             )
@@ -70,7 +72,10 @@ class ServerManage():
                 openid = res_json['openid']
                 sessionKey = res_json['session_key']
                 # todo 判断当前数据是否已经存在，来决策时更新还是插入新的数据。将openid和sessionKey写入表userInfoTableName中
-
+                result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName, condition=[f"\"Openid\"=\"{openid}\""])
+                if result.__len__() == 0:
+                    # (NickName, Openid, SessionKey, IsRegistered, isHasLover, LoverNickName, loverOpenid, loverSessionKey)
+                    self.mySQLConnectionManage.insert_data(tableName=userInfoTableName, data=("", openid, "", False, False, "", "", ""))
                 return jsonify(openid=openid, sessionKey=sessionKey, status="success", status_code=200)
             else:
                 return jsonify(status="fail", status_code=401)
