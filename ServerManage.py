@@ -11,7 +11,7 @@ import requests
 from flask import jsonify, request, Flask
 from loguru import logger
 
-from dataBaseTableManager import userInfoTableName
+from dataBaseTableManager import userInfoTableName, commentTableName
 
 
 class ServerManage():
@@ -26,11 +26,12 @@ class ServerManage():
         """
         @self.app.route('/getComment', methods=['GET'])
         def getComment():
-            name = request.args.get('name')
-            logger.info(f"received get request, name is {name}")
+            nickName = request.args.get('name')
+            openid = request.args.get('openid')
+            logger.info(f"received get request, name is {nickName}, openid is {openid}")
             # 调用mysql接口查询数据
-
-            return jsonify(message="success", status="success")
+            result = self.mySQLConnectionManage.query_data(tableName=commentTableName, condition=f"WHERE \"Openid\"=\"{openid}\" OR receiverOpenid={openid}")
+            return jsonify(message="success", status_code=0, data=result)
 
         """
         监听小程序的发表留言记录的接口
@@ -38,11 +39,24 @@ class ServerManage():
         @self.app.route('/postComment', methods=['POST'])
         def postComment():
             data = request.get_json()
-            logger.info(f"received post request, data is {data}")
-            # 调用mysql接口插入数据
-
+            logger.info(f"received postComment request, data is {data}")
+            senderNickName = data['senderNickName']
+            Openid = data['Openid']
+            receiverNickName = data['receiverNickName']
+            receiverOpenid = data['receiverOpenid']
+            Message = data['Message']
+            # 调用mysql接口插入数据 ("senderNickName", "Openid", "receiverNickName", "receiverOpenid", "Message")
+            ret = self.mySQLConnectionManage.insert_data(tableName=commentTableName, data=(senderNickName, Openid, receiverNickName, receiverOpenid, Message))
+            if ret != 0:
+                logger.error(f"insert data error, data is: {data}")
+                return jsonify(message="fail", status_code=-1)
             # 发送响应,jsonify返回json格式的response
-            return jsonify(message="success", status="success")
+            return jsonify(message="success", status_code=0)
+
+        @self.app.route('/userRegister', methods=['POST'])
+        def userRegister():
+            data = request.get_json()
+            logger.info(f"received userRegister request, data is {data}")
 
         """
         获取用户的唯一标识openid和对应的seesionkey
@@ -71,19 +85,13 @@ class ServerManage():
                 res_json = json.loads(responses.text)
                 openid = res_json['openid']
                 sessionKey = res_json['session_key']
-                # todo 判断当前数据是否已经存在，来决策时更新还是插入新的数据。将openid和sessionKey写入表userInfoTableName中
-                result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName, condition=[f"\"Openid\"=\"{openid}\""])
+                result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName, condition=f"WHERE Openid=\"{openid}\"")
                 if result.__len__() == 0:
                     # (NickName, Openid, SessionKey, IsRegistered, isHasLover, LoverNickName, loverOpenid, loverSessionKey)
                     self.mySQLConnectionManage.insert_data(tableName=userInfoTableName, data=("", openid, "", False, False, "", "", ""))
-                return jsonify(openid=openid, sessionKey=sessionKey, status="success", status_code=200)
+                return jsonify(openid=openid, sessionKey=sessionKey, message="success", status_code=200)
             else:
-                return jsonify(status="fail", status_code=401)
-
-
-        @self.app.route('/userRegister', methods=['POST'])
-        def userRegister():
-            data = request.get_json()
+                return jsonify(message="fail", status_code=401)
 
 
 

@@ -170,20 +170,20 @@ class MySQLConnectionManage:
     """
     查询数据
     tableName:查询表名
-    condition:查询数据的过滤条件，list格式，["key1=value1", "key2<value2", "key3>value3"]
+    condition:查询数据的过滤条件，str格式，"WHERE key1=value1 AND key2<value2 OR key3>value3"
     返回值：-1 is fail
     """
-    def query_data(self, tableName, condition:list):
+    def query_data(self, tableName, condition:str):
         try:
             cursor = self.connection.cursor()
-            sql = f"SELECT * FROM {tableName}"
-            if condition.__len__() > 0:
-                sql += " WHERE "
-                for item in condition:
-                    if item is condition[-1]:
-                        sql += item
-                        break
-                    sql += item + " AND "
+            sql = f"SELECT * FROM {tableName} {condition}"
+            # if condition.__len__() > 0:
+            #     sql += " WHERE "
+            #     for item in condition:
+            #         if item is condition[-1]:
+            #             sql += item
+            #             break
+            #         sql += item + " AND "
             logger.info(f"query data sql: {sql}")
             cursor.execute(operation=sql)
             result = cursor.fetchall()  # 获取所有结果
@@ -198,21 +198,21 @@ class MySQLConnectionManage:
     更新数据
     tableName:表名
     openid:对应数据的过滤条件
-    keyValue:需要修改的目标colName和colValue，list格式，["key1=value1", "key2=value2", "key3=value3"]
+    keyValue:需要修改的目标colName和colValue，str，"key1=value1, key2=value2, key3=value3"
     返回值：0 is success, -1 is fail
     """
-    def update_data(self, tableName:str, openid:str, keyValue:list):
+    def update_data(self, tableName:str, openid:str, keyValue:str):
         try:
             if keyValue.__len__() == 0:
                 logger.error("keyValue is empty.")
                 return -1
             cursor = self.connection.cursor()
-            sql = f"UPDATE {tableName} SET "
-            for item in keyValue:
-                if item is keyValue[-1]:
-                    sql += item
-                    break
-                sql += item + ", "
+            sql = f"UPDATE {tableName} SET {keyValue}"
+            # for item in keyValue:
+            #     if item is keyValue[-1]:
+            #         sql += item
+            #         break
+            #     sql += item + ", "
             sql += f" WHERE Openid = {openid}"
             logger.info(f"update sql: {sql}")
             cursor.execute(operation=sql)
