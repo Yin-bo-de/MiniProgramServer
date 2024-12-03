@@ -29,9 +29,20 @@ class ServerManage():
             nickName = request.args.get('name')
             openid = request.args.get('openid')
             logger.info(f"received get request, name is {nickName}, openid is {openid}")
-            # 调用mysql接口查询数据
-            result = self.mySQLConnectionManage.query_data(tableName=commentTableName, condition=f"WHERE \"Openid\"=\"{openid}\" OR receiverOpenid={openid}")
-            return jsonify(message="success", status_code=0, data=result)
+            # 调用mysql接口查询数据，todo：并将结果按时间排序
+            results = self.mySQLConnectionManage.query_data(tableName=commentTableName, condition=f"WHERE \"Openid\"=\"{openid}\" OR receiverOpenid={openid}")
+            res_data = {}
+            for result in results:
+                res_data[result[5]] = {}
+                data = {
+                    "senderNickName": result[0],
+                    "Openid": result[1],
+                    "receiverNickName": result[2],
+                    "receiverOpenid": result[3],
+                    "Message": result[4],
+                    "status_code": 0}
+                res_data["data"] = data
+            return jsonify(res_data)
 
         """
         监听小程序的发表留言记录的接口
