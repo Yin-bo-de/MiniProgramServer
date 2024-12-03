@@ -68,6 +68,26 @@ class ServerManage():
         def userRegister():
             data = request.get_json()
             logger.info(f"received userRegister request, data is {data}")
+            openid = data['openid']
+            sessionKey = data['sessionKey']
+            avatarUrl = data['avatarUrl']
+            gender = data['gender']
+            result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName, condition=f"WHERE Openid=\"{openid}\"")
+            if result.__len__() == 0:
+                # (NickName, Openid, SessionKey, IsRegistered, isHasLover, LoverNickName, loverOpenid, loverSessionKey, AvatarUrl, LoverAvatarUrl, Gender)
+                self.mySQLConnectionManage.insert_data(tableName=userInfoTableName,
+                                                       data=("", openid, "", False, False, "", "", "", "", "", ""))
+                return jsonify(message="success", status_code=200)
+            self.mySQLConnectionManage.update_data(tableName=userInfoTableName,
+                                                   openid=openid,
+                                                   keyValue=f"avatarUrl=\"{avatarUrl}\", gender={gender}")
+            return jsonify(message="success", status_code=200)
+
+
+        @self.app.route('/getUserRigisterStatus', methods=['POST'])
+        def getUserRigisterStatus():
+            data = request.get_json()
+            logger.info(f"received userRegister request, data is {data}")
 
         """
         获取用户的唯一标识openid和对应的seesionkey
@@ -98,8 +118,8 @@ class ServerManage():
                 sessionKey = res_json['session_key']
                 result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName, condition=f"WHERE Openid=\"{openid}\"")
                 if result.__len__() == 0:
-                    # (NickName, Openid, SessionKey, IsRegistered, isHasLover, LoverNickName, loverOpenid, loverSessionKey)
-                    self.mySQLConnectionManage.insert_data(tableName=userInfoTableName, data=("", openid, "", False, False, "", "", ""))
+                    # (NickName, Openid, SessionKey, IsRegistered, isHasLover, LoverNickName, loverOpenid, loverSessionKey, AvatarUrl, LoverAvatarUrl, Gender)
+                    self.mySQLConnectionManage.insert_data(tableName=userInfoTableName, data=("", openid, "", False, False, "", "", "", "", "", ""))
                 return jsonify(openid=openid, sessionKey=sessionKey, message="success", status_code=200)
             else:
                 return jsonify(message="fail", status_code=401)

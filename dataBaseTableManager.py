@@ -73,6 +73,9 @@ class MySQLConnectionManage:
                     LoverNickName VARCHAR(100) ,
                     loverOpenid VARCHAR(100) UNIQUE,
                     loverSessionKey VARCHAR(100) ,
+                    AvatarUrl VARCHAR(1000),
+                    LoverAvatarUrl VARCHAR(1000),
+                    Gender VARCHAR(1000),
                     RegistrationDate DATETIME DEFAULT CURRENT_TIMESTAMP)"""
                 logger.info(f"create talbe sql: {sql}")
                 cursor.execute(operation=sql)
@@ -141,8 +144,8 @@ class MySQLConnectionManage:
             if tableName == userInfoTableName:
                 cursor = self.connection.cursor()
                 sql = f"""INSERT INTO {tableName}
-                    (NickName, Openid, SessionKey, IsRegistered, isHasLover, LoverNickName, loverOpenid, loverSessionKey) 
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+                    (NickName, Openid, SessionKey, IsRegistered, isHasLover, LoverNickName, loverOpenid, loverSessionKey, AvatarUrl, LoverAvatarUrl, Gender) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
                 logger.info(f"insert data sql: {sql} {data}")
                 # 插入一条数据
                 cursor.execute(
@@ -213,7 +216,7 @@ class MySQLConnectionManage:
             #         sql += item
             #         break
             #     sql += item + ", "
-            sql += f" WHERE Openid = {openid}"
+            sql += f" WHERE Openid=\"{openid}\""
             logger.info(f"update sql: {sql}")
             cursor.execute(operation=sql)
             self.connection.commit()
@@ -239,3 +242,8 @@ class MySQLConnectionManage:
             logger.exception(f"删除数据失败: {e}")
 
 
+if __name__ == "__main__":
+    connectionManage = MySQLConnectionManage(host='47.122.28.9', user='yinbo_debug', password='du4ySaAxZu&.')
+    connectionManage.create_database(databaseName=databaseName)
+    connectionManage.use_database(databaseName=databaseName)
+    connectionManage.drop_table(tableName=userInfoTableName)
