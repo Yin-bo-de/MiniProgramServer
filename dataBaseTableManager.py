@@ -174,12 +174,16 @@ class MySQLConnectionManage:
     查询数据
     tableName:查询表名
     condition:查询数据的过滤条件，str格式，"WHERE key1=value1 AND key2<value2 OR key3>value3"
+    metricsName:查询的指标名,默认查询所有指标，str格式，"Nickname,Openid,loverNickName"
     返回值：-1 is fail
     """
-    def query_data(self, tableName, condition:str):
+    def query_data(self, tableName, condition:str, metricsNames=''):
         try:
             cursor = self.connection.cursor()
-            sql = f"SELECT * FROM {tableName} {condition}"
+            if metricsNames == '':
+                sql = f"SELECT * FROM {tableName} {condition}"
+            else:
+                sql = f"SELECT {metricsNames} FROM {tableName} {condition}"
             # if condition.__len__() > 0:
             #     sql += " WHERE "
             #     for item in condition:

@@ -62,25 +62,38 @@ class ServerManage():
                 logger.error(f"insert data error, data is: {data}")
                 return jsonify(message="fail", status_code=-1)
             # 发送响应,jsonify返回json格式的response
+            logger.info(jsonify(message="success", status_code=0))
             return jsonify(message="success", status_code=0)
 
         @self.app.route('/userRegister', methods=['POST'])
         def userRegister():
             data = request.get_json()
             logger.info(f"received userRegister request, data is {data}")
+            keyValue = ""
             openid = data['openid']
+            if openid != "":
+                keyValue += f"openid=\"{openid}\","
             sessionKey = data['sessionKey']
+            if sessionKey != "":
+                keyValue += f"sessionKey=\"{sessionKey}\","
             avatarUrl = data['avatarUrl']
+            if avatarUrl != "":
+                keyValue += f"avatarUrl=\"{avatarUrl}\","
             gender = data['gender']
+            if gender != "":
+                keyValue += f"gender={gender}"
             result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName, condition=f"WHERE Openid=\"{openid}\"")
             if result.__len__() == 0:
                 # (NickName, Openid, SessionKey, IsRegistered, isHasLover, LoverNickName, loverOpenid, loverSessionKey, AvatarUrl, LoverAvatarUrl, Gender)
                 self.mySQLConnectionManage.insert_data(tableName=userInfoTableName,
-                                                       data=("", openid, "", False, False, "", "", "", "", "", ""))
+                                                       data=("", openid, "", True, False, "", "", "", "", "", ""))
+                logger.info(jsonify(message="success", status_code=200))
                 return jsonify(message="success", status_code=200)
+
             self.mySQLConnectionManage.update_data(tableName=userInfoTableName,
                                                    openid=openid,
-                                                   keyValue=f"avatarUrl=\"{avatarUrl}\", gender={gender}")
+                                                   keyValue=keyValue)
+            logger.info(jsonify(message="success", status_code=200))
             return jsonify(message="success", status_code=200)
 
 
@@ -88,6 +101,16 @@ class ServerManage():
         def getUserRigisterStatus():
             data = request.get_json()
             logger.info(f"received userRegister request, data is {data}")
+            openid = data['openid']
+            result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName,
+                                                           condition=f"WHERE Openid=\"{openid}\"",
+                                                           metricsNames="IsRegistered,AvatarUrl")
+            logger.info(result)
+            if result[0][0] == 1:
+                logger.info(jsonify(message="success", status_code=200, IsRegistered=True, AvatarUrl=result[0][1]))
+                return jsonify(message="success", status_code=200, IsRegistered=True, AvatarUrl=result[0][1])
+            logger.info(jsonify(message="success", status_code=200, IsRegistered=True))
+            return jsonify(message="success", status_code=200, IsRegistered=False)
 
         """
         获取用户的唯一标识openid和对应的seesionkey
