@@ -65,6 +65,11 @@ class ServerManage():
             logger.info(jsonify(message="success", status_code=0))
             return jsonify(message="success", status_code=0)
 
+        """
+        用户点击头像进行注册的接口，更新IsRegistered、gender、avatarUrl
+        :param name: 
+        :return: 
+        """
         @self.app.route('/userRegister', methods=['POST'])
         def userRegister():
             data = request.get_json()
@@ -81,7 +86,8 @@ class ServerManage():
                 keyValue += f"avatarUrl=\"{avatarUrl}\","
             gender = data['gender']
             if gender != "":
-                keyValue += f"gender={gender}"
+                keyValue += f"gender={gender},"
+            keyValue += f"IsRegistered=True"
             result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName, condition=f"WHERE Openid=\"{openid}\"")
             if result.__len__() == 0:
                 # (NickName, Openid, SessionKey, IsRegistered, isHasLover, LoverNickName, loverOpenid, loverSessionKey, AvatarUrl, LoverAvatarUrl, Gender)
@@ -96,7 +102,11 @@ class ServerManage():
             logger.info(jsonify(message="success", status_code=200))
             return jsonify(message="success", status_code=200)
 
-
+        """
+        登陆小程序界面时，请求当前用户的注册状态，并获取对应的头像url展示
+        :param name: 
+        :return: 
+        """
         @self.app.route('/getUserRigisterStatus', methods=['POST'])
         def getUserRigisterStatus():
             data = request.get_json()
@@ -104,13 +114,45 @@ class ServerManage():
             openid = data['openid']
             result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName,
                                                            condition=f"WHERE Openid=\"{openid}\"",
-                                                           metricsNames="IsRegistered,AvatarUrl")
+                                                           metricsNames="IsRegistered,NickName,AvatarUrl,isHasLover,LoverNickName,LoverAvatarUrl")
             logger.info(result)
-            if result[0][0] == 1:
-                logger.info(jsonify(message="success", status_code=200, IsRegistered=True, AvatarUrl=result[0][1]))
-                return jsonify(message="success", status_code=200, IsRegistered=True, AvatarUrl=result[0][1])
-            logger.info(jsonify(message="success", status_code=200, IsRegistered=True))
-            return jsonify(message="success", status_code=200, IsRegistered=False)
+            # if result[0][0] == 1:
+            #     return jsonify(IsRegistered=result[0][0],
+            #                    AvatarUrl=result[0][2],
+            #                    NickName=result[0][1],
+            #                    isHasLover=result[0][3],
+            #                    LoverNickName=result[0][4],
+            #                    LoverAvatarUrl=result[0][5],
+            #                    message="success",
+            #                    status_code=200)
+            logger.info(jsonify(IsRegistered=result[0][0],
+                           AvatarUrl=result[0][2],
+                           NickName=result[0][1],
+                           isHasLover=result[0][3],
+                           LoverNickName=result[0][4],
+                           LoverAvatarUrl=result[0][5],
+                           message="success",
+                           status_code=200))
+            return jsonify(IsRegistered=result[0][0],
+                           AvatarUrl=result[0][2],
+                           NickName=result[0][1],
+                           isHasLover=result[0][3],
+                           LoverNickName=result[0][4],
+                           LoverAvatarUrl=result[0][5],
+                           message="success",
+                           status_code=200)
+
+        """
+        邀请恋人加入，将恋人的数据更新到自己的数据表，并更新恋人数据表
+        :param name: 
+        :return: 
+        """
+        # todo
+        @self.app.route('/loverInvite', methods=['POST'])
+        def loverInvite():
+            data = request.get_json()
+            logger.info(f"receive loverInvite request: data: {data}")
+
 
         """
         获取用户的唯一标识openid和对应的seesionkey
@@ -146,9 +188,6 @@ class ServerManage():
                 return jsonify(openid=openid, sessionKey=sessionKey, message="success", status_code=200)
             else:
                 return jsonify(message="fail", status_code=401)
-
-
-
 
 
     def run(self):

@@ -237,7 +237,7 @@ class MySQLConnectionManage:
     def del_data(self, tableName:str, openid:str):
         try:
             cursor = self.connection.cursor()
-            sql = f"DELETE FROM {tableName} WHERE Openid={openid}"
+            sql = f"DELETE FROM {tableName} WHERE Openid=\"{openid}\""
             logger.info(f"del_data sql: {sql}")
             cursor.execute(operation=sql)
             self.connection.commit()
@@ -248,6 +248,7 @@ class MySQLConnectionManage:
 
 if __name__ == "__main__":
     connectionManage = MySQLConnectionManage(host='47.122.28.9', user='yinbo_debug', password='du4ySaAxZu&.')
-    connectionManage.create_database(databaseName=databaseName)
+    # connectionManage.create_database(databaseName=databaseName)
     connectionManage.use_database(databaseName=databaseName)
     connectionManage.drop_table(tableName=userInfoTableName)
+    # connectionManage.del_data(tableName=userInfoTableName, openid='oufmR7QHwb9gH4iRjW1CmkGG5enM')
