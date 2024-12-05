@@ -110,7 +110,7 @@ class ServerManage():
         @self.app.route('/getUserRigisterStatus', methods=['POST'])
         def getUserRigisterStatus():
             data = request.get_json()
-            logger.info(f"received userRegister request, data is {data}")
+            logger.info(f"received getUserRigisterStatus request, data is {data}")
             openid = data['openid']
             result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName,
                                                            condition=f"WHERE Openid=\"{openid}\"",
