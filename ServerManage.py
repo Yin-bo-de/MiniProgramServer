@@ -153,6 +153,8 @@ class ServerManage():
             data = request.get_json()
             logger.info(f"receive loverInvite request: data: {data}")
 
+            return jsonify(message="success",
+                           status_code=200)
 
         """
         获取用户的唯一标识openid和对应的seesionkey
