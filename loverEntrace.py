@@ -6,7 +6,7 @@ from loguru import logger
 from ServerManage import ServerManage
 from dataBaseTableManager import MySQLConnectionManage, databaseName, commentTableName, userInfoTableName
 
-MacroEnvDebug = False  # 定义数据库连接环境，True表示本地远程连接调试，False表示本地连接
+MacroEnvDebug = True  # 定义数据库连接环境，True表示本地远程连接调试，False表示本地连接
 
 
 def initLog():
