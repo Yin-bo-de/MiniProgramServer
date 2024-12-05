@@ -115,6 +115,9 @@ class ServerManage():
             result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName,
                                                            condition=f"WHERE Openid=\"{openid}\"",
                                                            metricsNames="IsRegistered,NickName,AvatarUrl,isHasLover,LoverNickName,LoverAvatarUrl")
+            if result.__len__() == 0:
+                return jsonify(message="fail",
+                               status_code=-1)
             logger.info(result)
             # if result[0][0] == 1:
             #     return jsonify(IsRegistered=result[0][0],
