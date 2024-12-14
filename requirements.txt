@@ -2,3 +2,4 @@ loguru
 mysql-connector-python
 flask
 requests
+minio
