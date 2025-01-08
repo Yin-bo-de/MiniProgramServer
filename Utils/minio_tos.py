@@ -5,10 +5,11 @@ from minio.error import S3Error
 def upload(source_file, destination_file):
     # Create a client with the MinIO server playground, its access key
     # and secret key.
-    client = Minio("yin2du.xin:9000",
-                    access_key="0VLq5WFevcJ5LHe9g9Ha",
-                    secret_key="C0Q2sFsMAPJ3q2vHzgwKAhaiXRpB9EbppAjnafUl",
-                    secure=True,
+    client = Minio(
+        endpoint="yin2du.xin:9000",
+        access_key="0VLq5WFevcJ5LHe9g9Ha",
+        secret_key="C0Q2sFsMAPJ3q2vHzgwKAhaiXRpB9EbppAjnafUl",
+        secure=True,
     )
 
     # The destination bucket and filename on the MinIO server
