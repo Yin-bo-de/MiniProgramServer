@@ -5,6 +5,7 @@ from minio.error import S3Error
 def upload(source_file, destination_file):
     # Create a client with the MinIO server playground, its access key
     # and secret key.
+    destination_file = "miniProgrameLover/" + destination_file
     client = Minio(
         endpoint="yin2du.xin:9000",
         access_key="0VLq5WFevcJ5LHe9g9Ha",

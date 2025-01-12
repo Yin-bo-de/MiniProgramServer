@@ -262,14 +262,13 @@ class ServerManage():
                 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
                 # 保存文件
                 file.save(filepath)
-                # todo: 将文件上传到minio，并返回文件获取url
                 minio_tos.upload(source_file=filepath, destination_file=filename)
-                url = "https://yin2du.xin:9001/browser/xnloverservice/" + filename
+                url = "https://yin2du.xin:9001/api/v1/buckets/xnloverservice/objects/download?preview=true&prefix=miniProgrameLover/" + filename
                 # 返回文件的保存路径或者相关信息
-                return jsonify({'message': 'File uploaded successfully', 'file_url': url}), 200
+                return jsonify(message="File uploaded successfully", file_url=url, status_code=200)
             return jsonify({'error': 'File type not allowed'}), 400
 
     def run(self):
         logger.info(f"Starting Flask server on {self.host}:{self.port}")
-        self.app.run(ssl_context=( 'sslFiles/fullchain.pem', 'sslFiles/privkey.pem'), host=self.host, port=self.port)
-
+        # self.app.run(ssl_context=( 'sslFiles/fullchain.pem', 'sslFiles/privkey.pem'), host=self.host, port=self.port)
+        self.app.run(host=self.host, port=self.port)
