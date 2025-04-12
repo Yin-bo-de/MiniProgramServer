@@ -410,5 +410,5 @@ class ServerManage():
 
     def run(self):
         logger.info(f"Starting Flask server on {self.host}:{self.port}")
-        # self.app.run(ssl_context=( 'sslFiles/fullchain.pem', 'sslFiles/privkey.pem'), host=self.host, port=self.port)
-        self.app.run(host=self.host, port=self.port)
+        self.app.run(ssl_context=( 'sslFiles/fullchain.pem', 'sslFiles/privkey.pem'), host=self.host, port=self.port)
+        # self.app.run(host=self.host, port=self.port)
