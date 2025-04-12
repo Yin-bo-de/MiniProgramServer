@@ -5,6 +5,7 @@ from loguru import logger
 databaseName = "loverDatabase"
 commentTableName = "CommentTable" # 留言记录数据表, 保存: 【日期】【发送方name】【接收方name】【Message】
 userInfoTableName = "userInfoTable" # 记录每个用户的openid, 用于判断用户是否注册状态【nickName】【openid】【sessionKey】【】
+ImageTable = "ImageTable"
 # connectionManage = initDataBaseTable(databaseName, commentTableName)
 
 
@@ -99,11 +100,24 @@ class MySQLConnectionManage:
             elif tableName == commentTableName:
                 cursor = self.connection.cursor()
                 sql = f"""CREATE TABLE IF NOT EXISTS {tableName} (
-                    senderNickName VARCHAR(100) NOT NULL,
+                    senderNickName VARCHAR(100),
                     Openid VARCHAR(100) NOT NULL,
-                    receiverNickName VARCHAR(100) NOT NULL, 
+                    receiverNickName VARCHAR(100), 
                     receiverOpenid VARCHAR(100) NOT NULL,
                     Message VARCHAR(100) NOT NULL, 
+                    RegistrationDate DATETIME DEFAULT CURRENT_TIMESTAMP)"""
+                # 创建一个简单的表
+                logger.info(f"create talbe sql: {sql}")
+                cursor.execute(operation=sql)
+                self.connection.commit()
+                logger.info(f"表 {tableName} 创建成功")
+            elif tableName == ImageTable:
+                cursor = self.connection.cursor()
+                sql = f"""CREATE TABLE IF NOT EXISTS {tableName} (
+                    uploaderNickName VARCHAR(100),
+                    senderOpenid VARCHAR(100) NOT NULL,
+                    receiverOpenid VARCHAR(100) NOT NULL, 
+                    ImageUrl VARCHAR(1000) NOT NULL,
                     RegistrationDate DATETIME DEFAULT CURRENT_TIMESTAMP)"""
                 # 创建一个简单的表
                 logger.info(f"create talbe sql: {sql}")
@@ -197,6 +211,18 @@ class MySQLConnectionManage:
                 sql = f"""INSERT INTO {tableName} 
                     (senderNickName, Openid, receiverNickName, receiverOpenid, Message) 
                     VALUES (%s, %s, %s, %s, %s)"""
+                logger.info(f"insert data sql: {sql} {data}")
+                # 插入一条数据
+                cursor.execute(
+                    operation=sql,
+                    params=data)
+                self.connection.commit()  # 提交事务
+                logger.info("数据插入成功")
+            elif tableName == ImageTable:
+                cursor = self.connection.cursor()
+                sql = f"""INSERT INTO {tableName} 
+                    (uploaderNickName, senderOpenid, receiverOpenid, ImageUrl)
+                    VALUES (%s, %s, %s, %s)"""
                 logger.info(f"insert data sql: {sql} {data}")
                 # 插入一条数据
                 cursor.execute(
@@ -320,5 +346,5 @@ if __name__ == "__main__":
     connectionManage = MySQLConnectionManage(host='47.122.28.9', user='yinbo_debug', password='du4ySaAxZu&.')
     # connectionManage.create_database(databaseName=databaseName)
     connectionManage.use_database(databaseName=databaseName)
-    connectionManage.drop_table(tableName=userInfoTableName)
+    connectionManage.drop_table(tableName=ImageTable)
     # connectionManage.del_data(tableName=userInfoTableName, openid='oufmR7QHwb9gH4iRjW1CmkGG5enM')
