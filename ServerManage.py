@@ -160,6 +160,11 @@ class ServerManage():
                 return jsonify(res_data)
             
             result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName, condition=f"WHERE Openid=\"{openid}\"", metricsNames="loverOpenid")
+            if result.__len__() == 0: 
+                res_data["message"] = "fail, user has not lover."
+                res_data["status_code"] = -1
+                logger.info(f"Response: {res_data}")
+                return jsonify(res_data)
             logger.info("result: ", result[0])
             loverOpenid = result[0][0]
             # (uploaderNickName, senderOpenid, receiverOpenid, ImageUrl)
