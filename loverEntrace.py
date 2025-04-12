@@ -4,7 +4,7 @@ import requests
 from loguru import logger
 
 from ServerManage import ServerManage
-from dataBaseTableManager import MySQLConnectionManage, databaseName, commentTableName, userInfoTableName
+from dataBaseTableManager import *
 
 MacroEnvDebug = True  # 定义数据库连接环境，True表示本地远程连接调试，False表示本地连接
 
@@ -33,6 +33,6 @@ def initDataBaseTable(databaseName, tableNameList:list):
 
 if __name__ == "__main__":
     initLog()
-    mySQLConnectionManage = initDataBaseTable(databaseName=databaseName, tableNameList=[userInfoTableName, commentTableName])
+    mySQLConnectionManage = initDataBaseTable(databaseName=databaseName, tableNameList=[userInfoTableName, commentTableName, ImageTable])
     serverManage = ServerManage(mySQLConnectionManage=mySQLConnectionManage, host="0.0.0.0", port=8081)
     serverManage.run()

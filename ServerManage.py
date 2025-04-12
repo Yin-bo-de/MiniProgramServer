@@ -6,6 +6,7 @@ import datetime
 import json
 import os
 import string
+from tkinter import Image
 
 import requests
 from flask import jsonify, request, Flask
@@ -27,7 +28,7 @@ class ServerManage():
         @self.app.route('/getComment', methods=['GET'])
         def getComment():
             """
-            监听小程序的获取留言记录的接口
+            监听小程序的获取留言记录的接口，这里应该控制一次性返回的条数
             """
             res_data = {}
             nickName = request.args.get('name')
@@ -136,7 +137,38 @@ class ServerManage():
             res_data["status_code"] = 200
             logger.info(f"Response: {res_data}")
             return jsonify(res_data)
-
+        
+        @self.app.route('/uploadImage', methods=['POST'])
+        def uploadImage():
+            """
+            用户上传图片
+            :param name:
+            :return:
+            """
+            data = request.get_json()
+            logger.info(f"received userRegister request, data is {data}")
+            openid = data.get('openid')
+            sessionKey = data.get('sessionKey')
+            imageUrl = data.get('imageUrl')
+            uploaderNickName = data.get('uploaderNickName')
+            result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName, condition=f"WHERE Openid=\"{openid}\"")
+            res_data = {}
+            if result.__len__() == 0: 
+                res_data["message"] = "fail, user not register."
+                res_data["status_code"] = -1
+                logger.info(f"Response: {res_data}")
+                return jsonify(res_data)
+            
+            result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName, condition=f"WHERE Openid=\"{openid}\"", metricsNames="loverOpenid")
+            logger.info("result: ", result[0])
+            loverOpenid = result[0][0]
+            # (uploaderNickName, senderOpenid, receiverOpenid, ImageUrl)
+            logger.info("loverOpenid: " + loverOpenid)
+            self.mySQLConnectionManage.insert_data(tableName=ImageTable, data=(uploaderNickName, openid, loverOpenid, imageUrl)) # type: ignore
+            res_data["message"] = "success"
+            res_data["status_code"] = 200
+            logger.info(f"Response: {res_data}")
+            return jsonify(res_data)
 
         @self.app.route('/getUserRigisterStatus', methods=['POST'])
         def getUserRigisterStatus():
@@ -151,6 +183,12 @@ class ServerManage():
             result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName,
                                                            condition=f"WHERE Openid=\"{openid}\"",
                                                            metricsNames="IsRegistered,NickName,AvatarUrl,isHasLover,LoverNickName,LoverAvatarUrl")
+            result2 = self.mySQLConnectionManage.query_data(tableName=ImageTable,
+                                                              condition=f"WHERE senderOpenid=\"{openid}\" OR receiverOpenid=\"{openid}\"",
+                                                              metricsNames="ImageUrl")
+            imageUrls = []
+            for item in result2:
+                imageUrls.append(item[0])
             res_data = {}
             if result.__len__() == 0:
                 res_data["message"] = "fail"
@@ -164,6 +202,7 @@ class ServerManage():
                 "isHasLover": result[0][3],
                 "LoverNickName": result[0][4],
                 "LoverAvatarUrl": result[0][5],
+                "ImageUrls": imageUrls,
                 "message": "success",
                 "status_code": 200
             }
@@ -179,39 +218,63 @@ class ServerManage():
             :param name:
             :return:
             """
+            res_data = {}
             data = request.get_json()
             logger.info(f"receive loverInvite request: data: {data}")
             openid = data.get('openid')
             loverOpenid = data.get('loverOpenid')
-            loverNickName = data.get('loverNickName')
-            loverSessionKey = data.get('loverSessionKey')
-            loverGender = data.get('loverGender')
-            loverAvatarUrl = data.get('loverAvatarUrl')
             keyValue = []
             if loverOpenid:
                 keyValue.append(f"loverOpenid=\"{loverOpenid}\"")
-            if loverSessionKey:
-                keyValue.append(f"loverSessionKey=\"{loverSessionKey}\"")
-            if loverNickName:
-                keyValue.append(f"loverNickName=\"{loverNickName}\"")
-            if loverGender:
-                keyValue.append(f"loverGender=\"{loverGender}\"")
-            if loverAvatarUrl:
-                keyValue.append(f"LoverAvatarUrl=\"{loverAvatarUrl}\"")
+            else:
+                logger.error(f"lover openid error.")
+                res_data["message"] = "fail, lover openid error."
+                res_data["status_code"] = -1
+                logger.info(f"Response: {res_data}")
+                return jsonify(res_data)
             keyValue.append("isHasLover=True")
-            res_data = {}
-            result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName, condition=f"WHERE Openid=\"{loverOpenid}\"", metricsNames="IsRegistered")
+            # 受邀请方
+            result = self.mySQLConnectionManage.query_data(tableName=userInfoTableName, condition=f"WHERE Openid=\"{loverOpenid}\"", metricsNames="IsRegistered,AvatarUrl,SessionKey,Gender,NickName")
             if result.__len__() == 0 or (result.__len__() != 0 and result[0][0] == False):
                 logger.error(f"insert data error, lover is not register.")
                 res_data["message"] = "fail, lover is not register."
                 res_data["status_code"] = -1
                 logger.info(f"Response: {res_data}")
                 return jsonify(res_data)
-            self.mySQLConnectionManage.update_data(tableName=userInfoTableName, openid=openid, keyValue=", ".join(keyValue))
-            res_data = {
-                "message": "success",
-                "status_code": 200
-            }
+            keyValue.append(f"LoverAvatarUrl=\"{result[0][1]}\"")
+            keyValue.append(f"loverSessionKey=\"{result[0][2]}\"")
+            keyValue.append(f"loverGender=\"{result[0][3]}\"")
+            keyValue.append(f"loverNickName=\"{result[0][4]}\"")
+            res_data['LoverAvatarUrl'] = result[0][1]
+            ret = self.mySQLConnectionManage.update_data(tableName=userInfoTableName, openid=openid, keyValue=", ".join(keyValue))
+            if ret == -1:
+                res_data["message"] = "update date fail."
+                res_data["status_code"] = -1
+                logger.info(f"Response: {res_data}")
+                return jsonify(res_data)
+
+            # 邀请方
+            keyValue2 = []
+            keyValue2.append(f"loverOpenid=\"{openid}\"")
+            result2 = self.mySQLConnectionManage.query_data(tableName=userInfoTableName, condition=f"WHERE Openid=\"{openid}\"", metricsNames="IsRegistered,AvatarUrl,SessionKey,Gender,NickName")
+            if result2.__len__() == 0 or (result2.__len__() != 0 and result2[0][0] == False):
+                logger.error(f"insert data error, lover is not register.")
+                res_data["message"] = "fail, lover is not register."
+                res_data["status_code"] = -1
+                logger.info(f"Response: {res_data}")
+                return jsonify(res_data)
+            keyValue2.append(f"LoverAvatarUrl=\"{result2[0][1]}\"")
+            keyValue2.append(f"loverSessionKey=\"{result2[0][2]}\"")
+            keyValue2.append(f"loverGender=\"{result2[0][3]}\"")
+            keyValue2.append(f"loverNickName=\"{result2[0][4]}\"")
+            ret = self.mySQLConnectionManage.update_data(tableName=userInfoTableName, openid=loverOpenid, keyValue=", ".join(keyValue2))
+            if ret == -1:
+                res_data["message"] = "update date fail."
+                res_data["status_code"] = -1
+                logger.info(f"Response: {res_data}")
+                return jsonify(res_data)
+            res_data["message"] = "success"
+            res_data["status_code"] = 200
             logger.info(f"Response: {res_data}")
             return jsonify(res_data)
 
@@ -347,5 +410,5 @@ class ServerManage():
 
     def run(self):
         logger.info(f"Starting Flask server on {self.host}:{self.port}")
-        self.app.run(ssl_context=( 'sslFiles/fullchain.pem', 'sslFiles/privkey.pem'), host=self.host, port=self.port)
+        # self.app.run(ssl_context=( 'sslFiles/fullchain.pem', 'sslFiles/privkey.pem'), host=self.host, port=self.port)
         self.app.run(host=self.host, port=self.port)
